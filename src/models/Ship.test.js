@@ -8,6 +8,18 @@ describe('Ship', () => {
         expect(ship.size).toBe(3)
     })
 
+    it('should set name from constructor', () => {
+        const ship = new Ship(3, 'Cruiser')
+
+        expect(ship.name).toBe('Cruiser')
+    })
+
+    it('should default name to null', () => {
+        const ship = new Ship(3)
+
+        expect(ship.name).toBe(null)
+    })
+
     it('should mark position as hit', () => {
         const ship = new Ship(3)
 

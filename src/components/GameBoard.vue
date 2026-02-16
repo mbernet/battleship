@@ -25,6 +25,10 @@ const props = defineProps({
     disabled: {
         type: Boolean,
         default: false
+    },
+    lastAttack: {
+        type: Object,
+        default: null
     }
 })
 
@@ -57,6 +61,10 @@ function isPreviewCell(row, col) {
     return props.previewCells.some(p => p.row === row && p.col === col)
 }
 
+function isLastAttack(row, col) {
+    return props.lastAttack?.row === row && props.lastAttack?.col === col
+}
+
 function getCellClasses(row, col) {
     const state = getCellState(row, col)
     const isPreview = isPreviewCell(row, col)
@@ -81,10 +89,16 @@ function getCellClasses(row, col) {
 
     if (props.isEnemy && !props.disabled && state === 'empty') {
         classes += ' hover:bg-ocean-dark cursor-crosshair'
+    } else if (props.isEnemy && props.disabled) {
+        classes += ' cursor-not-allowed'
     }
 
     if (props.isPlacementMode && !props.isEnemy && state === 'empty') {
         classes += ' hover:bg-navy-500 cursor-pointer'
+    }
+
+    if (isLastAttack(row, col)) {
+        classes += ' ring-2 ring-offset-1 ring-offset-navy-900 ring-yellow-400 z-10'
     }
 
     return classes

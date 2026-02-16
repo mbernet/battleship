@@ -58,7 +58,7 @@ class Board {
 
         if (cell === null) {
             this.misses.push({ row, col })
-            return 'miss'
+            return { result: 'miss', ship: null }
         }
 
         const ship = cell
@@ -69,10 +69,10 @@ class Board {
         this.hits.push({ row, col })
 
         if (ship.isSunk()) {
-            return 'sunk'
+            return { result: 'sunk', ship }
         }
 
-        return 'hit'
+        return { result: 'hit', ship }
     }
 
     findShipPositions(ship) {

@@ -61,7 +61,8 @@ describe('Board', () => {
 
         const result = board.receiveAttack(0, 0)
 
-        expect(result).toBe('miss')
+        expect(result.result).toBe('miss')
+        expect(result.ship).toBe(null)
     })
 
     it('should return hit for ship cell', () => {
@@ -71,18 +72,21 @@ describe('Board', () => {
 
         const result = board.receiveAttack(0, 0)
 
-        expect(result).toBe('hit')
+        expect(result.result).toBe('hit')
+        expect(result.ship).toBe(ship)
     })
 
     it('should return sunk when ship fully hit', () => {
         const board = new Board()
-        const ship = new Ship(2)
+        const ship = new Ship(2, 'Destroyer')
         board.placeShip(ship, 0, 0, 'horizontal')
 
         board.receiveAttack(0, 0)
         const result = board.receiveAttack(0, 1)
 
-        expect(result).toBe('sunk')
+        expect(result.result).toBe('sunk')
+        expect(result.ship).toBe(ship)
+        expect(result.ship.name).toBe('Destroyer')
     })
 
     it('should throw error for already attacked cell', () => {

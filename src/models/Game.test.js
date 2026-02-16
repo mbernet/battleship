@@ -24,7 +24,7 @@ describe('Game', () => {
 
         const result = game.attack(0, 0)
 
-        expect(result).toBe('hit')
+        expect(result.result).toBe('hit')
     })
 
     it('should switch turn between players', () => {

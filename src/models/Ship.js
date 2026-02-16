@@ -1,6 +1,7 @@
 class Ship {
-    constructor(size) {
+    constructor(size, name = null) {
         this.size = size
+        this.name = name
         this.hits = []
     }
 

@@ -1,7 +1,10 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { useToast } from 'vue-toastification'
 import GameBoard from './GameBoard.vue'
-import { Board, Ship } from '../models/index.js'
+import { Board, Ship, AIPlayer } from '../models/index.js'
+
+const toast = useToast()
 
 const SHIPS = [
     { name: 'Carrier', size: 5 },
@@ -17,6 +20,12 @@ const gamePhase = ref('placement')
 const currentShipIndex = ref(0)
 const placementDirection = ref('horizontal')
 const hoverCell = ref(null)
+const isPlayerTurn = ref(true)
+const isProcessingTurn = ref(false)
+const aiPlayer = ref(null)
+const winner = ref(null)
+const lastPlayerAttack = ref(null)
+const lastComputerAttack = ref(null)
 
 const currentShip = computed(() => {
     if (currentShipIndex.value >= SHIPS.length) {
@@ -72,7 +81,7 @@ function handlePlayerCellClick({ row, col }) {
         return
     }
 
-    const ship = new Ship(currentShip.value.size)
+    const ship = new Ship(currentShip.value.size, currentShip.value.name)
 
     try {
         playerBoard.value.placeShip(ship, row, col, placementDirection.value)
@@ -109,6 +118,7 @@ function toggleDirection() {
 function startGame() {
     gamePhase.value = 'battle'
     placeComputerShips()
+    aiPlayer.value = new AIPlayer(playerBoard.value)
 }
 
 function placeComputerShips() {
@@ -119,7 +129,7 @@ function placeComputerShips() {
             const row = Math.floor(Math.random() * 10)
             const col = Math.floor(Math.random() * 10)
             const direction = Math.random() < 0.5 ? 'horizontal' : 'vertical'
-            const ship = new Ship(shipDef.size)
+            const ship = new Ship(shipDef.size, shipDef.name)
 
             try {
                 computerBoard.value.placeShip(ship, row, col, direction)
@@ -132,15 +142,65 @@ function placeComputerShips() {
 }
 
 function handleEnemyCellClick({ row, col }) {
-    if (gamePhase.value !== 'battle') {
+    if (gamePhase.value !== 'battle' || !isPlayerTurn.value || isProcessingTurn.value) {
         return
     }
 
-    try {
-        computerBoard.value.receiveAttack(row, col)
-    } catch (e) {
-        // Already attacked
+    const key = `${row},${col}`
+
+    if (computerBoard.value.attackedCells.has(key)) {
+        toast.warning('Already attacked this cell!')
+        return
     }
+
+    isProcessingTurn.value = true
+
+    const attackResult = computerBoard.value.receiveAttack(row, col)
+    lastPlayerAttack.value = { row, col }
+
+    showAttackToast(attackResult, 'player')
+
+    if (computerBoard.value.allShipsSunk()) {
+        winner.value = 'player'
+        gamePhase.value = 'gameOver'
+        toast.success('You win! All enemy ships destroyed!')
+        isProcessingTurn.value = false
+        return
+    }
+
+    isPlayerTurn.value = false
+    setTimeout(computerTurn, 800)
+}
+
+function showAttackToast(attackResult, attacker) {
+    const prefix = attacker === 'computer' ? 'Enemy: ' : ''
+
+    if (attackResult.result === 'miss') {
+        toast.info(`${prefix}Miss!`)
+    } else if (attackResult.result === 'hit') {
+        toast.warning(`${prefix}Hit!`)
+    } else if (attackResult.result === 'sunk') {
+        const shipName = attackResult.ship?.name || 'ship'
+        toast.error(`${prefix}Sunk the ${shipName}!`)
+    }
+}
+
+function computerTurn() {
+    const attackResult = aiPlayer.value.attack()
+    lastComputerAttack.value = { row: attackResult.row, col: attackResult.col }
+
+    showAttackToast(attackResult, 'computer')
+
+    if (playerBoard.value.allShipsSunk()) {
+        winner.value = 'computer'
+        gamePhase.value = 'gameOver'
+        toast.error('You lose! All your ships destroyed!')
+        isProcessingTurn.value = false
+        return
+    }
+
+    isPlayerTurn.value = true
+    isProcessingTurn.value = false
 }
 
 function resetGame() {
@@ -150,6 +210,12 @@ function resetGame() {
     currentShipIndex.value = 0
     placementDirection.value = 'horizontal'
     hoverCell.value = null
+    isPlayerTurn.value = true
+    isProcessingTurn.value = false
+    aiPlayer.value = null
+    winner.value = null
+    lastPlayerAttack.value = null
+    lastComputerAttack.value = null
 }
 </script>
 
@@ -194,6 +260,35 @@ function resetGame() {
             </div>
         </div>
 
+        <div v-if="gamePhase === 'battle'" class="text-center mb-6">
+            <div
+                class="inline-block rounded-lg px-6 py-3 border"
+                :class="isPlayerTurn && !isProcessingTurn ?
+                    'bg-green-900/30 border-green-600 text-green-300' :
+                    'bg-yellow-900/30 border-yellow-600 text-yellow-300'"
+            >
+                <p v-if="isPlayerTurn && !isProcessingTurn" class="text-lg font-bold">
+                    Your turn - Click enemy board to fire!
+                </p>
+                <p v-else class="text-lg font-bold">
+                    Computer is attacking...
+                </p>
+            </div>
+        </div>
+
+        <div v-if="gamePhase === 'gameOver'" class="text-center mb-6">
+            <div
+                class="inline-block rounded-lg px-6 py-3 border"
+                :class="winner === 'player' ?
+                    'bg-green-900/30 border-green-600 text-green-300' :
+                    'bg-red-900/30 border-red-600 text-red-300'"
+            >
+                <p class="text-2xl font-bold">
+                    {{ winner === 'player' ? 'Victory!' : 'Defeat!' }}
+                </p>
+            </div>
+        </div>
+
         <div class="flex flex-col lg:flex-row justify-center items-start gap-8 lg:gap-16">
             <div class="flex flex-col items-center">
                 <h2 class="text-xl font-bold mb-4 text-slate-300">
@@ -206,6 +301,7 @@ function resetGame() {
                         :is-placement-mode="gamePhase === 'placement'"
                         :preview-cells="previewCells"
                         :is-valid-placement="isValidPlacement"
+                        :last-attack="lastComputerAttack"
                         @cell-click="handlePlayerCellClick"
                         @cell-right-click="handlePlayerCellRightClick"
                         @cell-hover="handlePlayerCellHover"
@@ -225,7 +321,8 @@ function resetGame() {
                     <GameBoard
                         :board="computerBoard"
                         :is-enemy="true"
-                        :disabled="gamePhase === 'placement'"
+                        :disabled="gamePhase !== 'battle' || !isPlayerTurn || isProcessingTurn"
+                        :last-attack="lastPlayerAttack"
                         @cell-click="handleEnemyCellClick"
                     />
                 </div>
