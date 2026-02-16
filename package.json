@@ -11,6 +11,9 @@
     "test:watch": "vitest --watch"
   },
   "dependencies": {
+    "animejs": "^4.3.6",
+    "canvas-confetti": "^1.9.4",
+    "sweetalert2": "^11.26.18",
     "vue": "^3.5.25",
     "vue-toastification": "^2.0.0-rc.5"
   },
