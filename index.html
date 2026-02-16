@@ -4,9 +4,32 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>battleship</title>
+    <title>Battleship</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              navy: {
+                900: '#0a1628',
+                800: '#0f2240',
+                700: '#162d50',
+                600: '#1e3a5f',
+                500: '#2563eb',
+              },
+              ocean: {
+                light: '#38bdf8',
+                DEFAULT: '#0ea5e9',
+                dark: '#0284c7',
+              }
+            }
+          }
+        }
+      }
+    </script>
   </head>
-  <body>
+  <body class="bg-navy-900">
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
   </body>

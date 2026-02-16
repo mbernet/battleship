@@ -1,9 +1,7 @@
 <script setup>
+import GameView from './components/GameView.vue'
 </script>
 
 <template>
-  <h1>Hello World</h1>
+    <GameView />
 </template>
-
-<style scoped>
-</style>
