@@ -55,6 +55,11 @@ All game logic lives in `src/models/` as plain JS classes with zero framework de
 3. **Refactor** — Clean up while tests are green
 4. **Verify** — Run `npm run test` before considering a task done
 
+## Git Workflow
+
+- Commit after each working feature: git commit -m "feat: short description"
+- Keep commits small and atomic — one feature per commit
+
 ## Code Style
 
 - ES modules (`import`/`export`), no CommonJS
